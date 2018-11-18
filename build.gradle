@@ -1,0 +1,69 @@
+plugins {
+    id "java"
+    id "groovy"
+    id "application"
+    id "jacoco"
+    id "com.gorylenko.gradle-git-properties" version "1.5.2"
+}
+
+group = "com.przemyslawsikora.demos"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    testImplementation "org.codehaus.groovy:groovy-all:2.5.4"
+    testImplementation "org.spockframework:spock-core:1.2-groovy-2.5"
+    testImplementation 'org.slf4j:slf4j-api:1.7.25'
+    testImplementation 'org.slf4j:slf4j-simple:1.7.25'
+    testImplementation('com.athaydes:spock-reports:1.6.1') {
+        transitive = false // this avoids affecting your version of Groovy/Spock
+    }
+}
+
+application {
+    mainClassName = "com.przemyslawsikora.demos.java.App"
+}
+
+gitProperties {
+    extProperty = "gitProps"
+}
+generateGitProperties.outputs.upToDateWhen { false }
+jar {
+    manifest {
+        attributes(
+                "Implementation-Title": "Java Examples",
+                "Implementation-Version": version,
+                "Commit-ID": "${-> project.ext.gitProps['git.commit.id']}",
+                "Commit-Time": "${-> project.ext.gitProps['git.commit.time']}"
+        )
+    }
+}
+
+build.dependsOn jacocoTestReport
+build.dependsOn jacocoTestCoverageVerification
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        csv.enabled = true
+        html.destination file("${buildDir}/reports/jacoco")
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            enabled = true
+            element = 'CLASS'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50
+            }
+        }
+    }
+}
